@@ -1,0 +1,1109 @@
+-- ================================================================
+--  admin_schema.sql — MySQL DDL cho 85 bảng ADMIN schema
+--  Convert từ Oracle DDL
+--  Chạy: mysql -u root -p123 < admin_schema.sql
+-- ================================================================
+CREATE DATABASE IF NOT EXISTS admin_db CHARACTER SET utf8mb4;
+USE admin_db;
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 1: TỔ CHỨC HÀNH CHÍNH
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS adm_ministry (
+  id            BIGINT       NOT NULL AUTO_INCREMENT,
+  order_no      INT,
+  ministry_code VARCHAR(50)  NOT NULL,
+  ministry_name VARCHAR(255) NOT NULL,
+  description   VARCHAR(500),
+  is_active     TINYINT(1)   NOT NULL DEFAULT 1,
+  created_at    DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  version       INT          DEFAULT 0,
+  created_by    VARCHAR(50),
+  updated_at    DATETIME(6),
+  updated_by    VARCHAR(50),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ministry_code (ministry_code)
+);
+
+CREATE TABLE IF NOT EXISTS adm_department (
+  id              BIGINT       NOT NULL AUTO_INCREMENT,
+  ministry_code   VARCHAR(50)  NOT NULL,
+  department_code VARCHAR(50)  NOT NULL,
+  department_name VARCHAR(255) NOT NULL,
+  is_active       TINYINT(1)   NOT NULL DEFAULT 1,
+  is_primary      TINYINT(1)   NOT NULL DEFAULT 0,
+  created_at      DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  version         INT          DEFAULT 0,
+  created_by      VARCHAR(50),
+  updated_at      DATETIME(6),
+  updated_by      VARCHAR(50),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_dept_code (department_code)
+);
+
+CREATE TABLE IF NOT EXISTS adm_branch (
+  id              BIGINT       NOT NULL AUTO_INCREMENT,
+  department_code VARCHAR(50)  NOT NULL,
+  unit_code       VARCHAR(50)  NOT NULL,
+  unit_name       VARCHAR(255) NOT NULL,
+  is_active       TINYINT(1)   NOT NULL DEFAULT 1,
+  is_primary      TINYINT(1)   NOT NULL DEFAULT 0,
+  created_at      DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  version         INT          DEFAULT 0,
+  created_by      VARCHAR(50),
+  updated_at      DATETIME(6),
+  updated_by      VARCHAR(50),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_unit_code (unit_code)
+);
+
+CREATE TABLE IF NOT EXISTS adm_procedure (
+  id                BIGINT        NOT NULL AUTO_INCREMENT,
+  ministry_code     VARCHAR(50)   NOT NULL,
+  procedure_code    VARCHAR(100)  NOT NULL,
+  procedure_name    VARCHAR(1000) NOT NULL,
+  procedure_version VARCHAR(20),
+  is_active         TINYINT(1)    NOT NULL DEFAULT 1,
+  created_at        DATETIME(6)   DEFAULT CURRENT_TIMESTAMP(6),
+  version           INT           DEFAULT 0,
+  created_by        VARCHAR(50),
+  updated_at        DATETIME(6),
+  updated_by        VARCHAR(50),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_adm_proc_code (procedure_code)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 2: ADMIN THỦ TỤC
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS admin_procedures (
+  id         BIGINT      NOT NULL AUTO_INCREMENT,
+  code       VARCHAR(100) NOT NULL,
+  created_at DATETIME(6),
+  name       VARCHAR(255) NOT NULL,
+  status     VARCHAR(20),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_aproc_code (code)
+);
+
+CREATE TABLE IF NOT EXISTS admin_document_definitions (
+  id          BIGINT       NOT NULL AUTO_INCREMENT,
+  code        VARCHAR(100) NOT NULL,
+  created_at  DATETIME(6),
+  description VARCHAR(2000),
+  name        VARCHAR(255) NOT NULL,
+  status      VARCHAR(20)  NOT NULL,
+  updated_at  DATETIME(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_docdef_code (code)
+);
+
+CREATE TABLE IF NOT EXISTS admin_doc_def_versions (
+  id                     BIGINT NOT NULL AUTO_INCREMENT,
+  created_at             DATETIME(6),
+  is_active              TINYINT(1)   NOT NULL,
+  schema_content         LONGTEXT,
+  version                VARCHAR(50)  NOT NULL,
+  document_definition_id BIGINT       NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_procedure_documents (
+  id                     BIGINT NOT NULL AUTO_INCREMENT,
+  is_required            TINYINT(1)   NOT NULL,
+  document_definition_id BIGINT       NOT NULL,
+  procedure_id           BIGINT       NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_applications (
+  id               BIGINT NOT NULL AUTO_INCREMENT,
+  application_code VARCHAR(100),
+  created_at       DATETIME(6),
+  status           VARCHAR(50)  NOT NULL,
+  procedure_id     BIGINT       NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_aapp_code (application_code)
+);
+
+CREATE TABLE IF NOT EXISTS admin_app_documents (
+  id                     BIGINT NOT NULL AUTO_INCREMENT,
+  data_content           LONGTEXT NOT NULL,
+  document_definition_id BIGINT   NOT NULL,
+  version_id             BIGINT,
+  application_id         BIGINT   NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_app_logs (
+  id             BIGINT NOT NULL AUTO_INCREMENT,
+  created_at     DATETIME(6),
+  message        VARCHAR(2000),
+  status         VARCHAR(50),
+  step           VARCHAR(100),
+  application_id BIGINT NOT NULL,
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 3: DOANH NGHIỆP
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS enterprise (
+  tax_code        VARCHAR(50)  NOT NULL,
+  enterprise_name VARCHAR(255) NOT NULL,
+  address         VARCHAR(500) NOT NULL,
+  phone           VARCHAR(20)  NOT NULL,
+  email           VARCHAR(100) NOT NULL,
+  is_active       TINYINT(1)   NOT NULL DEFAULT 1,
+  created_at      DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  created_by      VARCHAR(50),
+  updated_at      DATETIME(6),
+  updated_by      VARCHAR(50),
+  version         INT          DEFAULT 0,
+  PRIMARY KEY (tax_code)
+);
+
+CREATE TABLE IF NOT EXISTS enterprises (
+  id         VARCHAR(20)  NOT NULL,
+  created_at DATETIME(6)  NOT NULL,
+  name       VARCHAR(255) NOT NULL,
+  status     VARCHAR(20)  NOT NULL,
+  tax_code   VARCHAR(20)  NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS enterprise_response (
+  id              BIGINT      NOT NULL AUTO_INCREMENT,
+  created_at      DATETIME(6),
+  enterprise_id   VARCHAR(64) NOT NULL,
+  registration_id VARCHAR(64) NOT NULL,
+  response_code   VARCHAR(32) NOT NULL,
+  response_message VARCHAR(500),
+  status          VARCHAR(32) NOT NULL,
+  updated_at      DATETIME(6),
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 4: HỒ SƠ
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS dossiers (
+  dossier_id           VARCHAR(50)  NOT NULL,
+  dossier_no           VARCHAR(50),
+  tax_code             VARCHAR(50)  NOT NULL,
+  procedure_type       VARCHAR(20)  NOT NULL DEFAULT 'NOP_LAN_DAU',
+  inspection_location  VARCHAR(500) NOT NULL,
+  application_no       VARCHAR(50)  NOT NULL,
+  technical_regulation VARCHAR(255) NOT NULL,
+  declared_standard    VARCHAR(255) NOT NULL,
+  application_date     DATE         NOT NULL,
+  submitted_at         DATETIME(6),
+  permit_date          DATE,
+  processed_at         DATETIME(6),
+  status               VARCHAR(50)  NOT NULL DEFAULT 'TAO_MOI',
+  is_deleted           TINYINT(1)   NOT NULL DEFAULT 0,
+  enterprise_name      VARCHAR(255),
+  created_at           DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  created_by           VARCHAR(50),
+  updated_at           DATETIME(6),
+  version              INT          DEFAULT 0,
+  PRIMARY KEY (dossier_id)
+);
+
+CREATE TABLE IF NOT EXISTS dossier_legacy (
+  id               BIGINT      NOT NULL AUTO_INCREMENT,
+  business_code    VARCHAR(50)  NOT NULL,
+  business_name    VARCHAR(255) NOT NULL,
+  certificate_serial VARCHAR(100) NOT NULL,
+  channel          VARCHAR(20)  NOT NULL,
+  contact_email    VARCHAR(255) NOT NULL,
+  created_at       DATETIME(6)  NOT NULL,
+  service_code     VARCHAR(50)  NOT NULL,
+  service_version  VARCHAR(20)  NOT NULL,
+  signature_method VARCHAR(50)  NOT NULL,
+  status           VARCHAR(30)  NOT NULL,
+  submitted_at     DATETIME(6)  NOT NULL,
+  transaction_code VARCHAR(50)  NOT NULL,
+  updated_at       DATETIME(6)  NOT NULL,
+  dossier_id       VARCHAR(50)  NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_dleg_txcode (transaction_code),
+  UNIQUE KEY uk_dleg_dosid (dossier_id)
+);
+
+CREATE TABLE IF NOT EXISTS dossier_status_historys (
+  id              BIGINT       NOT NULL AUTO_INCREMENT,
+  dossier_id      VARCHAR(50)  NOT NULL,
+  changed_by      VARCHAR(100) NOT NULL,
+  changed_at      DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  previous_status VARCHAR(100),
+  new_status      VARCHAR(100) NOT NULL,
+  change_summary  VARCHAR(500) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS dossier_status_history (
+  id          BIGINT      NOT NULL AUTO_INCREMENT,
+  dossier_id  VARCHAR(50) NOT NULL,
+  new_status  VARCHAR(30) NOT NULL,
+  old_status  VARCHAR(30) NOT NULL,
+  updated_at  DATETIME(6) NOT NULL,
+  updated_by  VARCHAR(100) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS processing_result (
+  id                     BIGINT       NOT NULL AUTO_INCREMENT,
+  dossier_id             VARCHAR(50)  NOT NULL,
+  notice_no              VARCHAR(50)  NOT NULL,
+  inspection_agency_name VARCHAR(255) NOT NULL,
+  signing_place          VARCHAR(255) NOT NULL,
+  signed_date            DATE         NOT NULL,
+  result_code            VARCHAR(50)  NOT NULL,
+  rejection_reason       VARCHAR(2000),
+  created_at             DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS result_goods (
+  id                   BIGINT       NOT NULL AUTO_INCREMENT,
+  processing_result_id BIGINT       NOT NULL,
+  goods_name           VARCHAR(255) NOT NULL,
+  origin_manufacturer  VARCHAR(255) NOT NULL,
+  quantity_weight      VARCHAR(100) NOT NULL,
+  unit                 VARCHAR(50)  NOT NULL,
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 5: HÀNG HÓA
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS goods_declaration (
+  id                      BIGINT       NOT NULL AUTO_INCREMENT,
+  dossier_id              VARCHAR(50)  NOT NULL,
+  goods_name              VARCHAR(500) NOT NULL,
+  technical_specification VARCHAR(1000) NOT NULL,
+  origin_manufacturer     VARCHAR(255) NOT NULL,
+  quantity_weight         VARCHAR(100) NOT NULL,
+  import_port             VARCHAR(255) NOT NULL,
+  expected_import_date    DATE         NOT NULL,
+  created_at              DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS goods_certificate (
+  id                      BIGINT      NOT NULL AUTO_INCREMENT,
+  dossier_id              VARCHAR(50) NOT NULL,
+  co_no                   VARCHAR(50),
+  cfs_no                  VARCHAR(50),
+  qms_certificate_no      VARCHAR(50),
+  qms_issuer              VARCHAR(255),
+  qms_issued_date         DATE,
+  conformity_cert_no      VARCHAR(50),
+  conformity_issuer       VARCHAR(255),
+  conformity_issued_date  DATE,
+  created_at              DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 6: KIỂM ĐỊNH DOANH NGHIỆP (dn_*)
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS dn_enterprise (
+  id         BIGINT       NOT NULL AUTO_INCREMENT,
+  tax_code   VARCHAR(20)  NOT NULL,
+  name       VARCHAR(255) NOT NULL,
+  address    VARCHAR(500) NOT NULL,
+  phone      VARCHAR(20)  NOT NULL,
+  fax        VARCHAR(20),
+  created_at DATETIME(6)  NOT NULL,
+  created_by VARCHAR(50),
+  updated_at DATETIME(6),
+  updated_by VARCHAR(50),
+  version    INT,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS dn_inspection_dossier (
+  id                            BIGINT       NOT NULL AUTO_INCREMENT,
+  enterprise_id                 BIGINT       NOT NULL,
+  dossier_id                    VARCHAR(50)  NOT NULL,
+  produce_type                  VARCHAR(50)  NOT NULL,
+  submission_date               DATE         NOT NULL,
+  application_number            VARCHAR(50),
+  collection_point              VARCHAR(255) NOT NULL,
+  contract_number               VARCHAR(100) NOT NULL,
+  goods_description             VARCHAR(1000) NOT NULL,
+  invoice_number                VARCHAR(100) NOT NULL,
+  tracking_number               VARCHAR(100) NOT NULL,
+  import_declaration_number     VARCHAR(100) NOT NULL,
+  co_number                     VARCHAR(100),
+  cfs_number                    VARCHAR(100),
+  qms_certificate_number        VARCHAR(100),
+  conformity_certificate_number VARCHAR(100),
+  created_at                    DATETIME(6)  NOT NULL,
+  created_by                    VARCHAR(50),
+  updated_at                    DATETIME(6),
+  updated_by                    VARCHAR(50),
+  version                       INT,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS dn_documents (
+  id                    BIGINT       NOT NULL AUTO_INCREMENT,
+  inspection_dossier_id BIGINT       NOT NULL,
+  document_name         VARCHAR(255) NOT NULL,
+  document_type         VARCHAR(50),
+  document_path         VARCHAR(500) NOT NULL,
+  file_size             BIGINT,
+  mime_type             VARCHAR(100),
+  uploaded_time         DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS dn_dossier_history (
+  id                    BIGINT       NOT NULL AUTO_INCREMENT,
+  inspection_dossier_id BIGINT       NOT NULL,
+  sequence_no           INT          NOT NULL,
+  change_time           DATETIME(6)  NOT NULL,
+  change_content        VARCHAR(500) NOT NULL,
+  dossier_status        VARCHAR(100) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS dn_inspection_result (
+  id                     BIGINT       NOT NULL AUTO_INCREMENT,
+  inspection_dossier_id  BIGINT       NOT NULL,
+  parent_agency_name     VARCHAR(255) NOT NULL,
+  inspection_agency_name VARCHAR(255) NOT NULL,
+  notification_no        VARCHAR(50)  NOT NULL,
+  signing_place          VARCHAR(255) NOT NULL,
+  signing_date           DATE         NOT NULL,
+  result_content         VARCHAR(50)  NOT NULL,
+  result_description     VARCHAR(2000),
+  received_time          DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS dn_inspection_result_document (
+  id                   BIGINT       NOT NULL AUTO_INCREMENT,
+  inspection_result_id BIGINT       NOT NULL,
+  document_name        VARCHAR(255) NOT NULL,
+  document_type        VARCHAR(50),
+  document_path        VARCHAR(500) NOT NULL,
+  file_size            BIGINT,
+  mime_type            VARCHAR(100),
+  uploaded_time        DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS dn_products (
+  id                      BIGINT       NOT NULL AUTO_INCREMENT,
+  inspection_dossier_id   BIGINT       NOT NULL,
+  product_name            VARCHAR(255) NOT NULL,
+  technical_specifications VARCHAR(1000) NOT NULL,
+  origin_manufacturer     VARCHAR(255) NOT NULL,
+  weight_or_quantity      VARCHAR(100) NOT NULL,
+  entry_port              VARCHAR(100) NOT NULL,
+  expected_entry_date     DATE         NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS dn_signatures (
+  id                    BIGINT       NOT NULL AUTO_INCREMENT,
+  inspection_dossier_id BIGINT       NOT NULL,
+  signed_by             VARCHAR(255) NOT NULL,
+  signer_position       VARCHAR(100) NOT NULL,
+  signing_location      VARCHAR(100) NOT NULL,
+  signing_date          DATE         NOT NULL DEFAULT (CURDATE()),
+  agreement_checked     TINYINT(1)   NOT NULL DEFAULT 0,
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 7: ĐĂNG KÝ
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS registrations (
+  id               VARCHAR(255) NOT NULL,
+  amend_version    INT          NOT NULL DEFAULT 0,
+  created_at       DATETIME(6)  NOT NULL,
+  enterprise_id    VARCHAR(20)  NOT NULL,
+  procedure_code   VARCHAR(20)  NOT NULL,
+  received_at      DATETIME(6)  NOT NULL,
+  registration_id  VARCHAR(20)  NOT NULL,
+  status           VARCHAR(20)  NOT NULL,
+  cancel_reason    VARCHAR(500),
+  created_by       VARCHAR(50),
+  updated_at       DATETIME(6),
+  version          INT          DEFAULT 0,
+  procedure_name   VARCHAR(255),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_reg_id (registration_id)
+);
+
+CREATE TABLE IF NOT EXISTS registration_statuses (
+  code           VARCHAR(50)  NOT NULL,
+  business_name  VARCHAR(255) NOT NULL,
+  created_at     DATETIME(6),
+  description    VARCHAR(1000),
+  technical_name VARCHAR(255),
+  PRIMARY KEY (code)
+);
+
+CREATE TABLE IF NOT EXISTS registration_audit_log (
+  id             VARCHAR(255) NOT NULL,
+  action         VARCHAR(255),
+  created_at     DATETIME(6),
+  enterprise_id  VARCHAR(255),
+  request_id     VARCHAR(255),
+  status         VARCHAR(255),
+  performed_by   VARCHAR(50),
+  ip_address     VARCHAR(50),
+  user_agent     VARCHAR(255),
+  account        VARCHAR(50),
+  full_name      VARCHAR(255),
+  unit           VARCHAR(255),
+  procedure_code VARCHAR(50),
+  reason         VARCHAR(500),
+  procedure_name VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS registration_data (
+  data_id    VARCHAR(255) NOT NULL,
+  created_at DATETIME(6)  NOT NULL,
+  data_json  LONGTEXT,
+  version_id VARCHAR(255) NOT NULL,
+  PRIMARY KEY (data_id),
+  UNIQUE KEY uk_regdt_vid (version_id)
+);
+
+CREATE TABLE IF NOT EXISTS registration_documents (
+  id               VARCHAR(255) NOT NULL,
+  content          LONGTEXT,
+  created_at       DATETIME(6)  NOT NULL,
+  document_type    VARCHAR(20)  NOT NULL,
+  registration_id  VARCHAR(255) NOT NULL,
+  amend_version    INT          NOT NULL,
+  status           VARCHAR(20)  NOT NULL,
+  file_id          VARCHAR(100),
+  file_name        VARCHAR(255),
+  created_by       VARCHAR(50),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS registration_history (
+  id              VARCHAR(255) NOT NULL,
+  created_at      DATETIME(6)  NOT NULL,
+  created_by      VARCHAR(50),
+  payload         LONGTEXT,
+  registration_id VARCHAR(20)  NOT NULL,
+  status          VARCHAR(20),
+  version         INT          NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS registration_versions (
+  id              VARCHAR(255) NOT NULL,
+  amend_version   INT          NOT NULL,
+  payload_xml     LONGTEXT,
+  received_at     DATETIME(6)  NOT NULL,
+  request_id      VARCHAR(50)  NOT NULL,
+  registration_id VARCHAR(255) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 8: CẢNH BÁO + LOG
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS alerts (
+  alert_id     VARCHAR(20)   NOT NULL,
+  alert_type   VARCHAR(255)  NOT NULL,
+  created_at   DATETIME(6),
+  message      VARCHAR(1000) NOT NULL,
+  reference_id VARCHAR(255),
+  severity     VARCHAR(50)   NOT NULL,
+  source       VARCHAR(255)  NOT NULL,
+  status       VARCHAR(50)   NOT NULL,
+  updated_at   DATETIME(6),
+  PRIMARY KEY (alert_id)
+);
+
+CREATE TABLE IF NOT EXISTS alert_audit_logs (
+  id              BIGINT       NOT NULL AUTO_INCREMENT,
+  alert_id        VARCHAR(20)  NOT NULL,
+  changed_by      VARCHAR(100) NOT NULL,
+  changed_at      DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  previous_status VARCHAR(100),
+  new_status      VARCHAR(100) NOT NULL,
+  change_note     VARCHAR(500),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id            VARCHAR(50)  NOT NULL,
+  action        VARCHAR(50),
+  created_at    DATETIME(6)  NOT NULL,
+  module        VARCHAR(50),
+  reference_id  VARCHAR(100),
+  error_message VARCHAR(1000),
+  ip_address    VARCHAR(50),
+  source_system VARCHAR(100),
+  status        VARCHAR(20),
+  request_time  DATETIME(6),
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 9: HÓA ĐƠN + ĐƠN HÀNG
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS invoices (
+  id             VARCHAR(255)  NOT NULL,
+  created_at     DATETIME(6)   NOT NULL,
+  amount         DECIMAL(18,2) NOT NULL,
+  customer_name  VARCHAR(255)  NOT NULL,
+  customer_phone VARCHAR(50),
+  invoice_code   VARCHAR(255)  NOT NULL,
+  status         VARCHAR(50)   NOT NULL,
+  created_by     VARCHAR(50),
+  updated_at     DATETIME(6),
+  version        INT           DEFAULT 0,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS invoice_items (
+  id         VARCHAR(255)  NOT NULL,
+  item_name  VARCHAR(255)  NOT NULL,
+  price      DECIMAL(18,2) NOT NULL,
+  quantity   INT           NOT NULL,
+  total      DECIMAL(18,2) NOT NULL,
+  invoice_id VARCHAR(255)  NOT NULL,
+  created_at DATETIME(6)   NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id           VARCHAR(255)  NOT NULL,
+  created_at   DATETIME(6)   NOT NULL,
+  customer_id  VARCHAR(50)   NOT NULL,
+  order_code   VARCHAR(50)   NOT NULL,
+  order_date   DATETIME(6)   NOT NULL,
+  status       VARCHAR(20)   NOT NULL,
+  total_amount DECIMAL(18,2) NOT NULL,
+  updated_at   DATETIME(6),
+  note         VARCHAR(1000),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ord_code (order_code)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id         VARCHAR(255)  NOT NULL,
+  amount     DECIMAL(18,2) NOT NULL,
+  price      DECIMAL(18,2) NOT NULL,
+  product_id VARCHAR(50)   NOT NULL,
+  quantity   INT           NOT NULL,
+  order_id   VARCHAR(255)  NOT NULL,
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 10: SẢN PHẨM
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS product_categories (
+  id          VARCHAR(255) NOT NULL,
+  code        VARCHAR(50)  NOT NULL,
+  created_at  DATETIME(6),
+  created_by  VARCHAR(50),
+  description LONGTEXT,
+  is_active   TINYINT(1)   NOT NULL,
+  name        VARCHAR(100) NOT NULL,
+  updated_at  DATETIME(6),
+  updated_by  VARCHAR(50),
+  version     INT,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_pcat_code (code)
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id          VARCHAR(50)   NOT NULL,
+  created_at  DATETIME(6),
+  created_by  VARCHAR(50),
+  description LONGTEXT,
+  name        VARCHAR(200)  NOT NULL,
+  price       DECIMAL(18,2) NOT NULL,
+  status      VARCHAR(20)   NOT NULL,
+  stock_qty   INT           NOT NULL,
+  unit        VARCHAR(30)   NOT NULL,
+  updated_at  DATETIME(6),
+  updated_by  VARCHAR(50),
+  version     INT,
+  category_id VARCHAR(255)  NOT NULL,
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 11: QC (Kiểm soát chất lượng)
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS qc_enterprise (
+  id                   BIGINT NOT NULL AUTO_INCREMENT,
+  address              VARCHAR(255),
+  email                VARCHAR(255),
+  fax                  VARCHAR(255),
+  name                 VARCHAR(255),
+  phone                VARCHAR(255),
+  tax_code             VARCHAR(255),
+  representative_name  VARCHAR(255),
+  business_license_no  VARCHAR(255),
+  license_issue_date   DATE,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS qc_application_status (
+  id   BIGINT NOT NULL AUTO_INCREMENT,
+  code VARCHAR(255),
+  name VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS qc_application (
+  id                   BIGINT NOT NULL AUTO_INCREMENT,
+  application_code     VARCHAR(255),
+  applied_standard     VARCHAR(255),
+  commitment_checked   INT,
+  enterprise_id        BIGINT,
+  gathering_place      VARCHAR(255),
+  is_deleted           INT,
+  permit_code          VARCHAR(255),
+  permit_date          DATE,
+  procedure_type       VARCHAR(255),
+  signer_date          DATE,
+  signer_name          VARCHAR(255),
+  signer_place         VARCHAR(255),
+  signer_position      VARCHAR(255),
+  status_id            BIGINT,
+  submit_date          DATE,
+  technical_regulation VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS qc_application_attachments (
+  id             BIGINT NOT NULL AUTO_INCREMENT,
+  application_id BIGINT,
+  file_path      VARCHAR(255),
+  file_type      VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS qc_application_goods (
+  id                      BIGINT NOT NULL AUTO_INCREMENT,
+  application_id          BIGINT,
+  import_date             DATE,
+  import_port             VARCHAR(255),
+  origin_manufacturer     VARCHAR(255),
+  product_name            VARCHAR(255),
+  quantity_or_weight      VARCHAR(255),
+  technical_specification VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS qc_application_import_docs (
+  id                      BIGINT NOT NULL AUTO_INCREMENT,
+  application_id          BIGINT,
+  bill_of_lading          VARCHAR(255),
+  cfs_number              VARCHAR(255),
+  co_number               VARCHAR(255),
+  conformity_cert_date    DATE,
+  conformity_cert_number  VARCHAR(255),
+  conformity_cert_org     VARCHAR(255),
+  contract_number         VARCHAR(255),
+  customs_declaration_no  VARCHAR(255),
+  invoice_number          VARCHAR(255),
+  packing_list            VARCHAR(255),
+  quality_cert_number     VARCHAR(255),
+  quality_cert_org        VARCHAR(255),
+  import_date             DATE,
+  invoice_date            DATE,
+  port_of_arrival         VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS qc_application_status_history (
+  id             BIGINT NOT NULL AUTO_INCREMENT,
+  action_by      VARCHAR(255),
+  action_time    DATETIME(6),
+  application_id BIGINT,
+  note           VARCHAR(255),
+  status_id      BIGINT,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS qc_audit_log (
+  id           BIGINT NOT NULL AUTO_INCREMENT,
+  action_name  VARCHAR(255),
+  action_time  DATETIME(6),
+  module_name  VARCHAR(255),
+  payload      LONGTEXT,
+  reference_id VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS qc_ministry (
+  id          BIGINT NOT NULL AUTO_INCREMENT,
+  code        VARCHAR(50)   NOT NULL,
+  name        VARCHAR(500)  NOT NULL,
+  description VARCHAR(1000),
+  is_deleted  TINYINT(1)    DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_qcmin_code (code)
+);
+
+CREATE TABLE IF NOT EXISTS qc_procedure (
+  id          BIGINT NOT NULL AUTO_INCREMENT,
+  code        VARCHAR(50)   NOT NULL,
+  name        VARCHAR(500)  NOT NULL,
+  description VARCHAR(1000),
+  is_deleted  TINYINT(1)    DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_qcpro_code (code)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 12: TÀI LIỆU + FILE
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS applications (
+  id               BIGINT NOT NULL AUTO_INCREMENT,
+  application_code VARCHAR(100),
+  created_at       DATETIME(6),
+  status           VARCHAR(50)  NOT NULL,
+  procedure_id     BIGINT       NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_apps_code (application_code)
+);
+
+CREATE TABLE IF NOT EXISTS application_documents (
+  id                     BIGINT NOT NULL AUTO_INCREMENT,
+  data_content           LONGBLOB,
+  document_definition_id BIGINT NOT NULL,
+  version_id             BIGINT,
+  application_id         BIGINT NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS document_definition_versions (
+  id                     BIGINT NOT NULL AUTO_INCREMENT,
+  created_at             DATETIME(6),
+  is_active              TINYINT(1) NOT NULL,
+  schema_content         LONGBLOB,
+  version                VARCHAR(50) NOT NULL,
+  document_definition_id BIGINT      NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS files (
+  id            VARCHAR(255) NOT NULL,
+  created_at    DATETIME(6)  NOT NULL,
+  file_name     VARCHAR(255) NOT NULL,
+  file_path     VARCHAR(255) NOT NULL,
+  file_size     BIGINT,
+  mime_type     VARCHAR(255),
+  original_name VARCHAR(255) NOT NULL,
+  status        VARCHAR(255),
+  created_by    VARCHAR(255),
+  file_type     VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS file_links (
+  id          BIGINT       NOT NULL AUTO_INCREMENT,
+  entity_id   VARCHAR(255) NOT NULL,
+  entity_type VARCHAR(255) NOT NULL,
+  file_id     VARCHAR(255) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS attachment (
+  attachment_id  VARCHAR(255) NOT NULL,
+  checksum       VARCHAR(200),
+  document_type  VARCHAR(100),
+  file_name      VARCHAR(500),
+  file_path      VARCHAR(1000),
+  file_size      BIGINT,
+  file_type      VARCHAR(100),
+  uploaded_at    DATETIME(6)  NOT NULL,
+  version_id     VARCHAR(255) NOT NULL,
+  PRIMARY KEY (attachment_id)
+);
+
+CREATE TABLE IF NOT EXISTS attachments (
+  id              BIGINT       NOT NULL AUTO_INCREMENT,
+  dossier_id      VARCHAR(50)  NOT NULL,
+  attachment_type VARCHAR(50)  NOT NULL,
+  file_name       VARCHAR(255) NOT NULL,
+  file_path       VARCHAR(500) NOT NULL,
+  file_format     VARCHAR(100),
+  file_size_kb    DECIMAL(10,2),
+  is_required     TINYINT(1)   DEFAULT 0,
+  uploaded_at     DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6),
+  label           VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 13: NGƯỜI DÙNG + XÁC THỰC
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS app_user (
+  id                  BIGINT       NOT NULL AUTO_INCREMENT,
+  password            VARCHAR(255) NOT NULL,
+  role                VARCHAR(255),
+  username            VARCHAR(255) NOT NULL,
+  enterprise_tax_code VARCHAR(50),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_usr_name (username)
+);
+
+CREATE TABLE IF NOT EXISTS auth_config (
+  id          BIGINT NOT NULL AUTO_INCREMENT,
+  auth_type   VARCHAR(255) NOT NULL,
+  config_json LONGTEXT,
+  is_active   TINYINT(1)   NOT NULL,
+  PRIMARY KEY (id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 14: MESSAGE + ROUTING
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS messages (
+  id             BIGINT      NOT NULL AUTO_INCREMENT,
+  created_at     DATETIME(6),
+  message_id     VARCHAR(64) NOT NULL,
+  parsed         TINYINT(1)  NOT NULL,
+  parsed_content LONGTEXT,
+  raw_message    LONGTEXT    NOT NULL,
+  status         VARCHAR(32),
+  tenant_id      VARCHAR(64),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_msg_id (message_id)
+);
+
+CREATE TABLE IF NOT EXISTS message_store (
+  id              BIGINT      NOT NULL AUTO_INCREMENT,
+  created_at      DATETIME(6) NOT NULL,
+  message_id      VARCHAR(50) NOT NULL,
+  parsed_content  LONGTEXT,
+  registration_id VARCHAR(50),
+  request_id      VARCHAR(50),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_msgst_id (message_id)
+);
+
+CREATE TABLE IF NOT EXISTS routing_messages (
+  id             BIGINT      NOT NULL AUTO_INCREMENT,
+  created_at     DATETIME(6),
+  message_id     VARCHAR(50) NOT NULL,
+  payload        LONGTEXT,
+  procedure_code VARCHAR(50),
+  status         VARCHAR(20) NOT NULL,
+  updated_at     DATETIME(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_rmsg_id (message_id)
+);
+
+CREATE TABLE IF NOT EXISTS received_responses (
+  id              BIGINT NOT NULL AUTO_INCREMENT,
+  payload         LONGTEXT,
+  received_at     DATETIME(6),
+  registration_id VARCHAR(50),
+  response_id     VARCHAR(50),
+  status          VARCHAR(50),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS response_packages (
+  id                BIGINT       NOT NULL AUTO_INCREMENT,
+  created_at        DATETIME(6)  NOT NULL,
+  processing_result LONGTEXT,
+  registration_id   VARCHAR(50)  NOT NULL,
+  response_code     VARCHAR(50),
+  response_id       VARCHAR(50)  NOT NULL,
+  response_message  VARCHAR(500),
+  status            VARCHAR(50),
+  enterprise_id     VARCHAR(50),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_rpkg_regid (registration_id),
+  UNIQUE KEY uk_rpkg_resid (response_id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 15: CHỮ KÝ
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS signatures (
+  signature_id       VARCHAR(255) NOT NULL,
+  cert_serial_number VARCHAR(255),
+  cert_subject       VARCHAR(255),
+  created_at         DATETIME(6),
+  request_id         VARCHAR(255) NOT NULL,
+  sign_time          DATETIME(6),
+  signature_data     LONGTEXT,
+  signed_data        LONGTEXT,
+  verified           TINYINT(1),
+  verified_at        DATETIME(6),
+  PRIMARY KEY (signature_id)
+);
+
+CREATE TABLE IF NOT EXISTS signature_info (
+  id                         BIGINT      NOT NULL AUTO_INCREMENT,
+  dossier_id                 VARCHAR(50) NOT NULL,
+  signer_name                VARCHAR(100) NOT NULL,
+  signer_title               VARCHAR(100) NOT NULL,
+  signing_place              VARCHAR(100) NOT NULL,
+  signed_date                DATE         NOT NULL DEFAULT (CURDATE()),
+  legal_commitment_confirmed TINYINT(1)   DEFAULT 0,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS signature_verification_log (
+  id         BIGINT      NOT NULL AUTO_INCREMENT,
+  created_at DATETIME(6),
+  message    VARCHAR(255),
+  request_id VARCHAR(255) NOT NULL,
+  valid      TINYINT(1)   NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_sigvl_reqid (request_id)
+);
+
+-- ────────────────────────────────────────────────────────────────
+--  NHÓM 16: HỆ THỐNG
+-- ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS planning (
+  id             BIGINT      NOT NULL AUTO_INCREMENT,
+  created_at     DATETIME(6),
+  description    VARCHAR(2000),
+  dossier_code   VARCHAR(64) NOT NULL,
+  name           VARCHAR(255) NOT NULL,
+  request_id     VARCHAR(64) NOT NULL,
+  status         VARCHAR(32) NOT NULL,
+  status_message VARCHAR(500),
+  updated_at     DATETIME(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_plan_doscode (dossier_code),
+  UNIQUE KEY uk_plan_reqid (request_id)
+);
+
+CREATE TABLE IF NOT EXISTS procedures (
+  code       VARCHAR(20)  NOT NULL,
+  created_at DATETIME(6)  NOT NULL,
+  name       VARCHAR(255) NOT NULL,
+  status     VARCHAR(20)  NOT NULL,
+  version    VARCHAR(10)  NOT NULL,
+  id         BIGINT       NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (code),
+  UNIQUE KEY uk_procs_id (id)
+);
+
+CREATE TABLE IF NOT EXISTS procedure_documents (
+  id                     BIGINT NOT NULL AUTO_INCREMENT,
+  is_required            TINYINT(1) NOT NULL,
+  document_definition_id BIGINT     NOT NULL,
+  procedure_id           BIGINT     NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS sync_sessions (
+  sync_id       VARCHAR(36)  NOT NULL,
+  created_at    DATETIME(6)  NOT NULL,
+  data_type     VARCHAR(50)  NOT NULL,
+  end_time      DATETIME(6),
+  message       VARCHAR(500),
+  source_system VARCHAR(50)  NOT NULL,
+  start_time    DATETIME(6)  NOT NULL,
+  status        VARCHAR(20)  NOT NULL,
+  sync_mode     VARCHAR(20)  NOT NULL,
+  failed_count  INT          DEFAULT 0,
+  max_retry     INT          DEFAULT 3,
+  retry_count   INT          DEFAULT 0,
+  success_count INT          DEFAULT 0,
+  PRIMARY KEY (sync_id)
+);
+
+CREATE TABLE IF NOT EXISTS system_limits (
+  limit_id         VARCHAR(36)  NOT NULL,
+  action_on_exceed VARCHAR(20)  NOT NULL,
+  created_at       DATETIME(6),
+  limit_type       VARCHAR(50)  NOT NULL,
+  max_value        DOUBLE       NOT NULL,
+  status           VARCHAR(10)  NOT NULL,
+  target           VARCHAR(50)  NOT NULL,
+  time_window      VARCHAR(20)  NOT NULL,
+  updated_at       DATETIME(6),
+  PRIMARY KEY (limit_id),
+  UNIQUE KEY uk_syslim_target (limit_type, target)
+);
+
+CREATE TABLE IF NOT EXISTS system_limit_audits (
+  id          BIGINT      NOT NULL AUTO_INCREMENT,
+  action_by   VARCHAR(50) NOT NULL,
+  action_time DATETIME(6),
+  limit_id    VARCHAR(36) NOT NULL,
+  new_value   VARCHAR(255) NOT NULL,
+  note        VARCHAR(500),
+  old_value   VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS storage_config (
+  id          BIGINT NOT NULL AUTO_INCREMENT,
+  config_json LONGTEXT NOT NULL,
+  created_at  DATETIME(6)  NOT NULL,
+  secret_enc  LONGTEXT,
+  updated_at  DATETIME(6)  NOT NULL,
+  user_id     VARCHAR(100),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS theme_config (
+  id          BIGINT NOT NULL AUTO_INCREMENT,
+  config_json LONGTEXT,
+  created_at  DATETIME(6),
+  status      VARCHAR(255),
+  updated_at  DATETIME(6),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS status_codes (
+  code           VARCHAR(50)  NOT NULL,
+  name           VARCHAR(255) NOT NULL,
+  created_at     DATETIME(6),
+  description    VARCHAR(1000),
+  technical_name VARCHAR(255),
+  PRIMARY KEY (code)
+);
+
+CREATE TABLE IF NOT EXISTS asset (
+  id         VARCHAR(36)  NOT NULL,
+  created_at DATETIME(6)  NOT NULL,
+  iot        VARCHAR(255),
+  name       VARCHAR(255) NOT NULL,
+  project_id VARCHAR(36)  NOT NULL,
+  status     INT,
+  updated_at DATETIME(6),
+  uuids      VARCHAR(255),
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS flyway_schema_history (
+  installed_rank INT          NOT NULL,
+  version        VARCHAR(50),
+  description    VARCHAR(200) NOT NULL,
+  type           VARCHAR(20)  NOT NULL,
+  script         VARCHAR(1000) NOT NULL,
+  checksum       INT,
+  installed_by   VARCHAR(100) NOT NULL,
+  installed_on   DATETIME(6)  DEFAULT CURRENT_TIMESTAMP(6) NOT NULL,
+  execution_time INT          NOT NULL,
+  success        TINYINT(1)   NOT NULL,
+  PRIMARY KEY (installed_rank)
+);
+
+CREATE TABLE IF NOT EXISTS test_table (
+  column1 VARCHAR(255)
+);
