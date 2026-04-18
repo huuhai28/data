@@ -6,7 +6,6 @@
 # =============================================================
 
 # ─── JARs ─────────────────────────────────────────────────────
-# Tài file cần tiewrts
 common::download_jars() {
   echo ">>> [JAR] Tải JARs cần thiết..."
   wget -q -nc https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-aws-bundle/1.5.0/iceberg-aws-bundle-1.5.0.jar
@@ -14,8 +13,6 @@ common::download_jars() {
   wget -q -nc https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-runtime-1.18/1.5.0/iceberg-flink-runtime-1.18-1.5.0.jar
   echo "  ✅ JARs đã tải xong."
 }
-
-
 
 common::copy_jars_to_flink() {
   echo ">>> [JAR] Copy vào Flink containers..."
@@ -28,8 +25,7 @@ common::copy_jars_to_flink() {
   echo "  ✅ JARs sẵn sàng trong Flink."
 }
 
-# ─── MYSQL ────────────────────────────────────────────────────docker compose up -d cloudbeaver
-
+# ─── MYSQL ────────────────────────────────────────────────────
 common::wait_for_mysql() {
   echo ">>> [MySQL] Đợi MySQL sẵn sàng..."
   until docker exec mysql mysqladmin ping -h localhost -p123 --silent 2>/dev/null; do
@@ -38,17 +34,53 @@ common::wait_for_mysql() {
   echo " OK!"
 }
 
+# ─── KAFKA ────────────────────────────────────────────────────
+common::wait_for_kafka() {
+  echo ">>> [Kafka] Đợi Kafka sẵn sàng..."
+  until docker exec kafka kafka-topics \
+    --bootstrap-server kafka:9092 --list > /dev/null 2>&1; do
+    echo -n "."; sleep 2
+  done
+  echo " OK!"
+}
+
+common::wait_for_kafka_connect() {
+  echo ">>> [Kafka Connect] Đợi Kafka Connect sẵn sàng..."
+  until curl -s http://localhost:8083/connectors > /dev/null 2>&1; do
+    echo -n "."; sleep 2
+  done
+  echo " OK!"
+}
+
+# ─── FLINK ────────────────────────────────────────────────────
+common::wait_for_flink() {
+  echo ">>> [Flink] Đợi Flink sẵn sàng..."
+  until curl -s http://localhost:8081/overview > /dev/null 2>&1; do
+    echo -n "."; sleep 2
+  done
+  echo " OK!"
+}
+
+# ─── TRINO ────────────────────────────────────────────────────
+common::wait_for_trino() {
+  echo ">>> [Trino] Đợi Trino sẵn sàng..."
+  until docker exec trino trino --execute "SELECT 1" > /dev/null 2>&1; do
+    echo -n "."; sleep 3
+  done
+  echo " OK!"
+}
+
 # ─── POLARIS ──────────────────────────────────────────────────
 # Sau khi gọi hàm này, $TOKEN và $CREDENTIAL sẽ được export ra ngoài
 common::get_polaris_token() {
   echo ">>> [Polaris] Chờ Polaris khởi động..."
-  for i in $(seq 1 20); do
+  for i in $(seq 1 2); do
     HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
       http://localhost:8181/api/catalog/v1/oauth/tokens 2>/dev/null || true)
     if [[ "$HTTP" == "400" || "$HTTP" == "401" || "$HTTP" == "200" ]]; then
       echo "  ✅ Polaris sẵn sàng."; break
     fi
-    echo "  ... chờ Polaris (lần $i/5)..."; sleep 5
+    echo "  ... chờ Polaris (lần $i/20)..."; sleep 5
   done
 
   CREDENTIAL=$(docker logs polaris 2>&1 | grep -a "principal credentials" | tail -1 \
@@ -72,7 +104,7 @@ common::cleanup_flink_jobs() {
   echo ">>> [Cleanup] Cancel Flink jobs đang chạy..."
   local JOBS
   JOBS=$(docker exec flink-jobmanager curl -s http://localhost:8081/jobs \
-    | python3 -c "import sys,json; [print(j['id']) for j in json.load(sys.stdin)['jobs'] if j['status']=='RUNNING']" 2>/dev/null || true)
+    | python3 -c "import sys,json; [print(j['id']) for j in json.load(sys.stdin)['jobs'] if j['status'] in ('RUNNING', 'CREATED', 'RESTARTING', 'FAILING')]" 2>/dev/null || true)
   for JOB_ID in $JOBS; do
     docker exec flink-jobmanager curl -s -X PATCH \
       "http://localhost:8081/jobs/${JOB_ID}?mode=cancel" > /dev/null
@@ -185,15 +217,22 @@ common::create_polaris_catalog() {
   local CATALOG_NAME="$2"
   local S3_LOCATION="$3"
   echo ">>> [Polaris] Tạo catalog '$CATALOG_NAME'..."
+
+  # Xoá catalog cũ nếu tồn tại để nạp lại đúng cấu hình Minio Endpoint
+  curl -s -X DELETE "http://localhost:8181/api/management/v1/catalogs/$CATALOG_NAME" \
+    -H "X-Polaris-Realm: POLARIS" \
+    -H "Authorization: Bearer $TOKEN_ARG" > /dev/null || true
+
   HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
     -X POST "http://localhost:8181/api/management/v1/catalogs" \
     -H "X-Polaris-Realm: POLARIS" \
     -H "Authorization: Bearer $TOKEN_ARG" \
     -H "Content-Type: application/json" \
-    -d "{\"catalog\":{\"type\":\"INTERNAL\",\"name\":\"$CATALOG_NAME\",\"storageConfigInfo\":{\"storageType\":\"S3\",\"allowedLocations\":[\"$S3_LOCATION\"],\"pathStyleAccess\":true},\"properties\":{\"default-base-location\":\"${S3_LOCATION}iceberg-data\"}}}")
+    -d "{\"catalog\":{\"type\":\"INTERNAL\",\"name\":\"$CATALOG_NAME\",\"storageConfigInfo\":{\"storageType\":\"S3\",\"allowedLocations\":[\"$S3_LOCATION\"],\"pathStyleAccess\":true},\"properties\":{\"default-base-location\":\"${S3_LOCATION}iceberg-data\",\"s3.endpoint\":\"http://minio:9000\",\"s3.path-style-access\":\"true\",\"s3.access-key-id\":\"admin\",\"s3.secret-access-key\":\"password\",\"client.region\":\"us-east-1\"}}}")
   case "$HTTP" in
     201) echo "  ✅ Catalog '$CATALOG_NAME' đã được tạo." ;;
-    409) echo "  ✅ Catalog '$CATALOG_NAME' đã tồn tại." ;;
+    409) echo "  ✅ Catalog '$CATALOG_NAME' đã tồn tại (409)." ;;
+    400) echo "  ✅ Catalog '$CATALOG_NAME' đã tồn tại (400)." ;;
     *)   echo "  ⚠️  HTTP $HTTP khi tạo catalog." ;;
   esac
 }
@@ -234,60 +273,4 @@ common::submit_flink_sql() {
     -Drest.port=8081 \
     -f "$REMOTE_PATH"
   echo "  ✅ Flink SQL đã submit."
-}
-
-# ─── SQL GENERATORS ───────────────────────────────────────────
-# Các hàm này append DDL vào file SQL, dùng cho config-driven pipeline.
-# Gọi trong vòng lặp để tự động sinh SQL từ TABLES_REGISTRY.
-
-# common::gen_kafka_to_file <file> <table> <topic> <group> <pk> <cols>
-common::gen_kafka_to_file() {
-  local FILE="$1" TABLE="$2" TOPIC="$3" GROUP="$4" PK="$5" COLS="$6"
-  cat >> "$FILE" <<SQL
-
--- Kafka source: ${TABLE}
-DROP TABLE IF EXISTS ${TABLE}_kafka;
-CREATE TABLE ${TABLE}_kafka (
-  ${COLS},
-  PRIMARY KEY (${PK}) NOT ENFORCED
-) WITH (
-  'connector'                    = 'kafka',
-  'topic'                        = '${TOPIC}',
-  'properties.bootstrap.servers' = 'kafka:9092',
-  'properties.group.id'          = '${GROUP}',
-  'scan.startup.mode'            = 'earliest-offset',
-  'format'                       = 'debezium-json',
-  'debezium-json.schema-include' = 'true'
-);
-SQL
-}
-
-# common::gen_iceberg_to_file <file> <catalog> <namespace> <table> <pk> <cols>
-common::gen_iceberg_to_file() {
-  local FILE="$1" C="$2" NS="$3" TABLE="$4" PK="$5" COLS="$6"
-  cat >> "$FILE" <<SQL
-
--- Iceberg sink: ${TABLE}
-CREATE TABLE IF NOT EXISTS ${C}.${NS}.${TABLE} (
-  ${COLS},
-  PRIMARY KEY (${PK}) NOT ENFORCED
-) WITH (
-  'write.upsert.enabled'             = 'true',
-  'format-version'                   = '2',
-  'write.parquet.column-ids-enabled' = 'false'
-);
-SQL
-}
-
-# common::gen_trino_raw_to_file <file> <namespace> <table> <s3_location> <cols>
-common::gen_trino_raw_to_file() {
-  local FILE="$1" NS="$2" TABLE="$3" S3_LOC="$4" COLS="$5"
-  cat >> "$FILE" <<SQL
-CREATE TABLE minio.${NS}.${TABLE} (
-  ${COLS}
-) WITH (
-  external_location = '${S3_LOC}',
-  format = 'PARQUET'
-);
-SQL
 }

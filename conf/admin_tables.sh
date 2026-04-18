@@ -8,6 +8,7 @@ TABLES_REGISTRY=(
   "adm_department|adm_department|id|flink-adm-dept|passthrough"
   "adm_branch|adm_branch|id|flink-adm-branch|passthrough"
   "adm_procedure|adm_procedure|id|flink-adm-proc|passthrough"
+
   # Admin thủ tục
   "admin_procedures|admin_procedures|id|flink-adm-aproc|passthrough"
   "admin_document_definitions|admin_document_definitions|id|flink-adm-docdef|passthrough"
@@ -16,21 +17,25 @@ TABLES_REGISTRY=(
   "admin_applications|admin_applications|id|flink-adm-aapp|passthrough"
   "admin_app_documents|admin_app_documents|id|flink-adm-appdoc|passthrough"
   "admin_app_logs|admin_app_logs|id|flink-adm-applog|passthrough"
-  # Doanh nghiep
+
+  # Doanh nghiệp
   "enterprise|enterprise|tax_code|flink-adm-ent|passthrough"
   "enterprises|enterprises|id|flink-adm-ents|passthrough"
   "enterprise_response|enterprise_response|id|flink-adm-entres|passthrough"
-  # Ho so
+
+  # Hồ sơ
   "dossiers|dossiers|dossier_id|flink-adm-dos|passthrough"
   "dossier_legacy|dossier_legacy|id|flink-adm-dosl|passthrough"
   "dossier_status_historys|dossier_status_historys|id|flink-adm-dsh|passthrough"
   "dossier_status_history|dossier_status_history|id|flink-adm-dshv|passthrough"
   "processing_result|processing_result|id|flink-adm-pres|passthrough"
   "result_goods|result_goods|id|flink-adm-rg|passthrough"
-  # Hang hoa
+
+  # Hàng hóa
   "goods_declaration|goods_declaration|id|flink-adm-gd|passthrough"
   "goods_certificate|goods_certificate|id|flink-adm-gc|passthrough"
-  # Kiem dinh DN
+
+  # Kiểm định DN (dn_*)
   "dn_enterprise|dn_enterprise|id|flink-adm-dnent|passthrough"
   "dn_inspection_dossier|dn_inspection_dossier|id|flink-adm-dnid|passthrough"
   "dn_documents|dn_documents|id|flink-adm-dndoc|passthrough"
@@ -39,7 +44,8 @@ TABLES_REGISTRY=(
   "dn_inspection_result_document|dn_inspection_result_document|id|flink-adm-dnird|passthrough"
   "dn_products|dn_products|id|flink-adm-dnprod|passthrough"
   "dn_signatures|dn_signatures|id|flink-adm-dnsig|passthrough"
-  # Dang ky
+
+  # Đăng ký
   "registrations|registrations|id|flink-adm-reg|passthrough"
   "registration_statuses|registration_statuses|code|flink-adm-regst|passthrough"
   "registration_audit_log|registration_audit_log|id|flink-adm-regal|passthrough"
@@ -47,19 +53,23 @@ TABLES_REGISTRY=(
   "registration_documents|registration_documents|id|flink-adm-regdoc|passthrough"
   "registration_history|registration_history|id|flink-adm-regh|passthrough"
   "registration_versions|registration_versions|id|flink-adm-regv|passthrough"
-  # Canh bao + Log
+
+  # Cảnh báo + Log
   "alerts|alerts|alert_id|flink-adm-alt|passthrough"
   "alert_audit_logs|alert_audit_logs|id|flink-adm-altlog|passthrough"
   "audit_logs|audit_logs|id|flink-adm-aulog|passthrough"
-  # Hoa don + Don hang
+
+  # Hóa đơn + Đơn hàng
   "invoices|invoices|id|flink-adm-inv|passthrough"
   "invoice_items|invoice_items|id|flink-adm-invit|passthrough"
   "orders|orders|id|flink-adm-ord|passthrough"
   "order_items|order_items|id|flink-adm-ordit|passthrough"
-  # San pham
+
+  # Sản phẩm
   "products|products|id|flink-adm-prod|passthrough"
   "product_categories|product_categories|id|flink-adm-pcat|passthrough"
-  # QC
+
+  # QC (Kiểm soát chất lượng)
   "qc_enterprise|qc_enterprise|id|flink-adm-qcent|passthrough"
   "qc_application|qc_application|id|flink-adm-qcapp|passthrough"
   "qc_application_status|qc_application_status|id|flink-adm-qcast|passthrough"
@@ -70,7 +80,8 @@ TABLES_REGISTRY=(
   "qc_audit_log|qc_audit_log|id|flink-adm-qcal|passthrough"
   "qc_ministry|qc_ministry|id|flink-adm-qcmin|passthrough"
   "qc_procedure|qc_procedure|id|flink-adm-qcpro|passthrough"
-  # Tai lieu + File
+
+  # Tài liệu + File
   "applications|applications|id|flink-adm-apps|passthrough"
   "application_documents|application_documents|id|flink-adm-appdoc2|passthrough"
   "document_definition_versions|document_definition_versions|id|flink-adm-ddv|passthrough"
@@ -78,20 +89,24 @@ TABLES_REGISTRY=(
   "file_links|file_links|id|flink-adm-flink|passthrough"
   "attachment|attachment|attachment_id|flink-adm-att|passthrough"
   "attachments|attachments|id|flink-adm-atts|passthrough"
-  # Nguoi dung + Xac thuc
+
+  # Người dùng + Xác thực
   "app_user|app_user|id|flink-adm-usr|passthrough"
   "auth_config|auth_config|id|flink-adm-auth|passthrough"
+
   # Message + Routing
   "messages|messages|id|flink-adm-msg|passthrough"
   "message_store|message_store|id|flink-adm-msgst|passthrough"
   "routing_messages|routing_messages|id|flink-adm-rmsg|passthrough"
   "received_responses|received_responses|id|flink-adm-rres|passthrough"
   "response_packages|response_packages|id|flink-adm-rpkg|passthrough"
-  # Chu ky
+
+  # Chữ ký
   "signatures|signatures|signature_id|flink-adm-sig|passthrough"
   "signature_info|signature_info|id|flink-adm-siginfo|passthrough"
   "signature_verification_log|signature_verification_log|id|flink-adm-sigvl|passthrough"
-  # He thong
+
+  # Hệ thống
   "planning|planning|id|flink-adm-plan|passthrough"
   "procedures|procedures|code|flink-adm-procs|passthrough"
   "procedure_documents|procedure_documents|id|flink-adm-procd|passthrough"
