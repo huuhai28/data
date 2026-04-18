@@ -49,22 +49,26 @@ echo ">>> [3] Đang sinh code Flink SQL tự động..."
 python3 gen_platform_pipeline.py "$PROJECT_NAME" "$SQL_SOURCE" "$CATALOG" "$NAMESPACE" "$TOPIC_PREFIX" "$CREDENTIAL"
 
 # ─── [4] TỔNG VỆ SINH (CLEANUP) ──────────────────────────────
-echo ">>> [4] Đang tổng vệ sinh dữ liệu cũ..."
+echo ">>> [4] Đang tổng vệ sinh dữ liệu cũ (HARD RESET)..."
 common::cleanup_flink_jobs
 common::cleanup_minio "$BUCKET"
 common::cleanup_debezium_connectors "$PROJECT_NAME"
 
-# Đọc danh sách bảng để xóa trong Polaris và Kafka
+# RESET CỨNG POLARIS: Xóa toàn bộ Catalog để làm sạch Metadata
+echo "  🧹 Đang xóa Catalog cũ '$CATALOG' trong Polaris để reset metadata..."
+curl -s -X DELETE "http://localhost:8181/api/management/v1/catalogs/${CATALOG}" \
+     -H "X-Polaris-Realm: POLARIS" \
+     -H "Authorization: Bearer $TOKEN" || true
+
+# Xóa Kafka topics dựa trên danh sách bảng (nếu có)
 if [ -f "generated/${PROJECT_NAME}/tables.list" ]; then
   TABLES=$(cat "generated/${PROJECT_NAME}/tables.list")
-  echo "  🧹 Xóa Iceberg tables & Kafka topics cho: $TABLES"
-  common::cleanup_iceberg_tables "$TOKEN" "$CATALOG" "$NAMESPACE" $TABLES
   for T in $TABLES; do
     common::cleanup_kafka_topics "${TOPIC_PREFIX}.${PROJECT_NAME}.${T}"
   done
 fi
 
-echo ">>> [4b] Đang tạo Catalog '$CATALOG' trong Polaris..."
+echo ">>> [4b] Đang tạo Catalog MỚI '$CATALOG' trong Polaris..."
 common::create_polaris_catalog "$TOKEN" "$CATALOG" "s3://$BUCKET/"
 common::update_trino_token "$TOKEN" 
 

@@ -143,11 +143,18 @@ common::cleanup_iceberg_tables() {
   shift 3
   echo ">>> [Cleanup] Xóa Iceberg tables trong ${CATALOG}.${NAMESPACE}..."
   for TABLE in "$@"; do
+    # Lưu ý: Đường dẫn chuẩn phải có /catalogs/ trước tên Catalog
     HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
-      "http://localhost:8181/api/catalog/v1/${CATALOG}/namespaces/${NAMESPACE}/tables/${TABLE}" \
+      "http://localhost:8181/api/catalog/v1/catalogs/${CATALOG}/namespaces/${NAMESPACE}/tables/${TABLE}" \
       -H "Authorization: Bearer $TOKEN_ARG" -H "X-Polaris-Realm: POLARIS")
-    [ "$HTTP" = "204" ] && echo "  🗑️  Đã xóa: ${NAMESPACE}.${TABLE}" || \
-      echo "  ℹ️  ${NAMESPACE}.${TABLE} chưa tồn tại."
+    
+    if [ "$HTTP" = "204" ]; then
+      echo "  🗑️  Đã xóa thành công: ${NAMESPACE}.${TABLE}"
+    elif [ "$HTTP" = "404" ]; then
+      echo "  ℹ️  ${NAMESPACE}.${TABLE} không tồn tại (đã sạch)."
+    else
+      echo "  ⚠️  Lỗi khi xóa ${NAMESPACE}.${TABLE} (HTTP $HTTP)."
+    fi
   done
 }
 

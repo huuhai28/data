@@ -95,9 +95,11 @@ def generate_pipeline(project_name, sql_file, catalog, namespace, topic_prefix, 
                 cols.append(f"  {col_name} {col_type}")
 
             # Sink Table
+            f.write(f"DROP TABLE IF EXISTS {namespace}.{table_name};\n")
             f.write(f"CREATE TABLE IF NOT EXISTS {namespace}.{table_name} (\n" + ",\n".join(cols) + f"\n  , PRIMARY KEY ({pk}) NOT ENFORCED\n) WITH ('write.upsert.enabled'='true','format-version'='2');\n\n")
             
             # Kafka Source
+            f.write(f"DROP TABLE IF EXISTS default_catalog.default_database.{table_name}_src;\n")
             f.write(f"CREATE TABLE IF NOT EXISTS default_catalog.default_database.{table_name}_src (\n" + ",\n".join(cols) + f"\n  , PRIMARY KEY ({pk}) NOT ENFORCED\n) WITH (\n")
             f.write(f"  'connector'                    = 'kafka',\n")
             f.write(f"  'topic'                        = '{topic_prefix}.{project_name}.{table_name}',\n")
