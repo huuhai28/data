@@ -346,7 +346,7 @@ echo "  ✅ Trino da restart."
 echo ">>> [7] Submit Flink SQL pipeline..."
 
 cat > /tmp/hrm_pipeline.sql << EOF
-SET 'execution.checkpointing.interval' = '60s';
+SET 'execution.checkpointing.interval' = '10s';
 SET 'table.exec.sink.upsert-materialize' = 'AUTO';
 
 DROP CATALOG IF EXISTS hrm_catalog;
